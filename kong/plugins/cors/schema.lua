@@ -1,26 +1,26 @@
-local re_match = ngx.re.match
+local typedefs = require "kong.db.schema.typedefs"
 
-local check_regex = function(value)
-  if value and (#value > 1 or value[1] ~= "*") then
-    for _, origin in ipairs(value) do
-      local _, err = re_match("just a string to test", origin)
-      if err then
-        return false, "origin '" .. origin .. "' is not a valid regex"
-      end
-    end
-  end
-  return true
-end
+
+local methods = { type = "string",
+                  one_of = { "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE" } }
+
 
 return {
-  no_consumer = true,
+  name = "cors",
   fields = {
-    origins = { type = "array", func = check_regex },
-    headers = { type = "array" },
-    exposed_headers = { type = "array" },
-    methods = { type = "array", enum = { "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE" } },
-    max_age = { type = "number" },
-    credentials = { type = "boolean", default = false },
-    preflight_continue = { type = "boolean", default = false }
-  }
+    { consumer = typedefs.no_consumer },
+    { config = {
+        type = "record",
+        nullable = false,
+        fields = {
+          { origins = { type = "array", elements = { type = "string", is_regex = true }, }, },
+          { headers = { type = "array", elements = { type = "string" }, }, },
+          { exposed_headers = { type = "array", elements = { type = "string" }, }, },
+          { methods = { type = "array", elements = methods }, },
+          { max_age = { type = "number" }, },
+          { credentials = { type = "boolean", default = false }, },
+          { preflight_continue = { type = "boolean", default = false }, },
+    }, }, },
+  },
 }
+

@@ -1,10 +1,17 @@
 return {
+  name = "tcp-log",
   fields = {
-    host = { required = true, type = "string" },
-    port = { required = true, type = "number" },
-    timeout = { default = 10000, type = "number" },
-    keepalive = { default = 60000, type = "number" },
-    tls = { default = false, type = "boolean" },
-    tls_sni = { type = "string" },
+    { config = {
+        type = "record",
+        nullable = false,
+        fields = {
+          { host = { type = "string", required = true }, },
+          { port = { type = "integer", required = true }, },
+          { timeout = { type = "number", default = 10000 }, },
+          { keepalive = { type = "number", default = 60000 }, },
+          { tls = { type = "boolean", default = false }, },
+          { tls_sni = { type = "string" }, },
+        },
+    }, },
   }
 }
