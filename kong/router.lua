@@ -750,49 +750,30 @@ function _M.new(routes)
 
           if matched_route then
             local upstream_host
-            local upstream_uri   = req_uri
+            local upstream_uri
             local upstream_url_t = matched_route.upstream_url_t
             local matches        = ctx.matches
 
-            -- URI stripping logic
+            -- Path construction
 
-            local uri_root = req_uri == "/"
+            local request_postfix = matches.stripped_uri or ""
+            local upstream_base = upstream_url_t.path
 
-            if not uri_root and matched_route.strip_uri
-               and matches.stripped_uri
-            then
-              upstream_uri = matches.stripped_uri
-              if sub(upstream_uri, 1, 1) ~= "/" then
-                upstream_uri = "/" .. upstream_uri
-              end
-            end
-
-            -- uri trailing slash logic
-
-            local upstream_url_path = upstream_url_t.path
-            local upstream_url_file = upstream_url_t.file
-
-            if upstream_url_path and upstream_url_path ~= "/" then
-              if upstream_uri ~= "/" then
-                upstream_uri = upstream_url_file .. upstream_uri
-
+            if matched_route.strip_uri then
+              -- we drop the matched part, replacing it with the upstream path
+              if sub(upstream_base, -1, -1) == "/" and sub(request_postfix, 1, 1) == "/" then
+                -- double "/", so drop the first
+                upstream_uri = sub(upstream_base, 1, -2) .. request_postfix
               else
-                if upstream_url_path ~= upstream_url_file then
-                  if uri_root or sub(req_uri, -1) == "/" then
-                    upstream_uri = upstream_url_path
-
-                  else
-                    upstream_uri = upstream_url_file
-                  end
-
-                else
-                  if uri_root or sub(req_uri, -1) ~= "/" then
-                    upstream_uri = upstream_url_file
-
-                  else
-                    upstream_uri = upstream_url_file .. upstream_uri
-                  end
-                end
+                upstream_uri = upstream_base .. request_postfix
+              end
+            else
+              -- we retain the matched part, prefixing it with the upstream path
+              if sub(upstream_base, -1, -1) == "/" then
+                -- we have double "/", since request_base always starts with a "/"
+                upstream_uri = sub(upstream_base, 1, -2) .. req_uri
+              else
+                upstream_uri = upstream_base .. req_uri
               end
             end
 
